@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Wilayah;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class WilayahController extends Controller
 {
@@ -22,11 +23,18 @@ class WilayahController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama_wilayah' => 'required'
+            'nama_wilayah' => 'required',
+            'foto' => 'nullable|image|max:2048',
         ]);
 
+        $fotoPath = null;
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('wilayah', 'public');
+        }
+
         Wilayah::create([
-            'nama_wilayah' => $request->nama_wilayah
+            'nama_wilayah' => $request->nama_wilayah,
+            'foto' => $fotoPath,
         ]);
 
         return redirect('/wilayah')->with('success', 'Data berhasil ditambahkan');
@@ -42,8 +50,22 @@ class WilayahController extends Controller
     {
         $wilayah = Wilayah::findOrFail($id);
 
+        $request->validate([
+            'nama_wilayah' => 'required',
+            'foto' => 'nullable|image|max:2048',
+        ]);
+
+        $fotoPath = $wilayah->foto;
+        if ($request->hasFile('foto')) {
+            if ($wilayah->foto) {
+                Storage::disk('public')->delete($wilayah->foto);
+            }
+            $fotoPath = $request->file('foto')->store('wilayah', 'public');
+        }
+
         $wilayah->update([
-            'nama_wilayah' => $request->nama_wilayah
+            'nama_wilayah' => $request->nama_wilayah,
+            'foto' => $fotoPath,
         ]);
 
         return redirect('/wilayah')->with('success', 'Data berhasil diupdate');
@@ -52,6 +74,9 @@ class WilayahController extends Controller
     public function destroy($id)
     {
         $wilayah = Wilayah::findOrFail($id);
+        if ($wilayah->foto) {
+            Storage::disk('public')->delete($wilayah->foto);
+        }
         $wilayah->delete();
 
         return redirect('/wilayah')->with('success', 'Data berhasil dihapus');

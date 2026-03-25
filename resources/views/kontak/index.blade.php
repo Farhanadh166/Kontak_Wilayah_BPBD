@@ -16,6 +16,7 @@
     <thead>
         <tr>
             <th>No</th>
+            <th>Foto</th>
             <th>Wilayah</th>
             <th>Jabatan</th>
             <th>Nama</th>
@@ -28,6 +29,13 @@
     @foreach($kontak as $k)
         <tr>
             <td>{{ $loop->iteration }}</td>
+            <td>
+                @if($k->foto)
+                    <img src="{{ \Illuminate\Support\Facades\Storage::url($k->foto) }}" alt="Foto Kontak" style="max-height: 45px;">
+                @else
+                    -
+                @endif
+            </td>
             <td>{{ $k->wilayah->nama_wilayah }}</td>
             <td>{{ $k->jabatan->nama_jabatan }}</td>
             <td>{{ $k->nama }}</td>

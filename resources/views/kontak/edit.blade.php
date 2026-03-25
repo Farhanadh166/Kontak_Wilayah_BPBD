@@ -11,7 +11,7 @@
 <div class="card">
 <div class="card-body">
 
-<form action="{{ url('/kontak/update/'.$kontak->id) }}" method="POST">
+<form action="{{ url('/kontak/update/'.$kontak->id) }}" method="POST" enctype="multipart/form-data">
 
 @csrf
 
@@ -60,6 +60,18 @@
 <label>No HP</label>
 <input type="text" name="no_hp" value="{{ $kontak->no_hp }}" class="form-control">
 </div>
+
+<div class="form-group">
+<label>Foto Person (opsional)</label>
+<input type="file" name="foto" class="form-control" accept="image/*">
+</div>
+
+@if($kontak->foto)
+<div class="form-group mt-2">
+<label>Foto saat ini</label><br>
+<img src="{{ \Illuminate\Support\Facades\Storage::url($kontak->foto) }}" alt="Foto Kontak" style="max-height: 80px;">
+</div>
+@endif
 
 <button class="btn btn-primary">Update</button>
 <a href="/kontak" class="btn btn-secondary">Kembali</a>

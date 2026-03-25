@@ -12,7 +12,8 @@ class Kontak extends Model
         'wilayah_id',
         'jabatan_id',
         'nama',
-        'no_hp'
+        'no_hp',
+        'foto',
     ];
 
     public function wilayah()

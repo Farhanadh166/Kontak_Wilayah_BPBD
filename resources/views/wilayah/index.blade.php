@@ -15,6 +15,7 @@ Tambah Wilayah
 <table class="table table-bordered">
 <tr>
 <th>No</th>
+<th>Foto</th>
 <th>Nama Wilayah</th>
 <th>Aksi</th>
 </tr>
@@ -23,6 +24,13 @@ Tambah Wilayah
 
 <tr>
 <td>{{ $loop->iteration }}</td>
+<td>
+@if($w->foto)
+<img src="{{ \Illuminate\Support\Facades\Storage::url($w->foto) }}" alt="Foto Wilayah" style="max-height: 45px;">
+@else
+-
+@endif
+</td>
 <td>{{ $w->nama_wilayah }}</td>
 <td>
 
