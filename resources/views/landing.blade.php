@@ -207,23 +207,31 @@
             font-weight: 600;
             font-size: 0.97rem;
             line-height: 1.25;
+            word-break: break-word;
         }
         .person-head {
             display: flex;
             align-items: center;
-            gap: 0.65rem;
+            justify-content: space-between;
+            gap: 1rem;
         }
         .person-photo {
-            width: 44px;
-            height: 44px;
+            width: 68px;
+            height: 68px;
             object-fit: cover;
-            border-radius: 999px;
-            border: 1px solid rgba(148, 163, 184, 0.4);
+            border-radius: 0.55rem;
+            border: 2px solid rgba(148, 163, 184, 0.65);
             background: rgba(15, 23, 42, 0.7);
             flex-shrink: 0;
+            padding: 2px;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+        }
+        .person-content {
+            min-width: 0;
+            flex: 1;
         }
         .person-phone {
-            margin-top: 0.2rem;
+            margin-top: 0.28rem;
             font-size: 0.87rem;
             color: #dbeafe;
             text-decoration: none;
@@ -528,10 +536,12 @@
                                                      data-nama="{{ \Illuminate\Support\Str::lower($person->nama) }}"
                                                      data-hp="{{ \Illuminate\Support\Str::lower($person->no_hp) }}">
                                                     <div class="person-head">
+                                                        <div class="person-content">
+                                                            <div class="person-name">{{ $person->nama }}</div>
+                                                            <a href="tel:{{ $person->no_hp }}" class="person-phone">{{ $person->no_hp }}</a>
+                                                        </div>
                                                         <img class="person-photo" src="{{ $person->foto ? \Illuminate\Support\Facades\Storage::url($person->foto) : url('/assets/bpbd.png') }}" alt="Foto {{ $person->nama }}">
-                                                        <div class="person-name">{{ $person->nama }}</div>
                                                     </div>
-                                                    <a href="tel:{{ $person->no_hp }}" class="person-phone">{{ $person->no_hp }}</a>
                                                 </div>
                                             @else
                                                 <div class="operator-empty">Belum ada data.</div>
@@ -551,10 +561,12 @@
                                                  data-hp="{{ \Illuminate\Support\Str::lower($op->no_hp) }}">
                                                 <div class="operator-role">{{ optional($op->jabatan)->nama_jabatan ?? '-' }}</div>
                                                 <div class="person-head">
+                                                    <div class="person-content">
+                                                        <div class="person-name">{{ $op->nama }}</div>
+                                                        <a href="tel:{{ $op->no_hp }}" class="person-phone">{{ $op->no_hp }}</a>
+                                                    </div>
                                                     <img class="person-photo" src="{{ $op->foto ? \Illuminate\Support\Facades\Storage::url($op->foto) : url('/assets/bpbd.png') }}" alt="Foto {{ $op->nama }}">
-                                                    <div class="person-name">{{ $op->nama }}</div>
                                                 </div>
-                                                <a href="tel:{{ $op->no_hp }}" class="person-phone">{{ $op->no_hp }}</a>
                                             </div>
                                         @empty
                                             <div class="operator-empty">Belum ada data operator.</div>
