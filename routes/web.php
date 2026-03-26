@@ -3,10 +3,12 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\KontakController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\WilayahController;
 use App\Http\Controllers\JabatanController;
+use App\Http\Controllers\SirineController;
 
 // Asset sederhana untuk landing (logo BPBD disimpan di resources/views/assets)
 Route::get('/assets/bpbd.png', function () {
@@ -16,8 +18,21 @@ Route::get('/assets/bpbd.png', function () {
     );
 });
 
-// Landing page publik
-Route::get('/', [LandingController::class, 'index']);
+// Beranda navigasi publik
+Route::get('/', [HomeController::class, 'index']);
+
+// Halaman direktori kontak wilayah
+Route::get('/kontak-wilayah', [LandingController::class, 'index']);
+
+// Sistem monitoring & kontrol sirine
+Route::get('/sirine', [SirineController::class, 'index']);
+Route::post('/sirine/store', [SirineController::class, 'store']);
+Route::get('/sirine/edit/{id}', [SirineController::class, 'edit']);
+Route::post('/sirine/update/{id}', [SirineController::class, 'update']);
+Route::post('/sirine/delete/{id}', [SirineController::class, 'destroy']);
+Route::post('/sirine/level/{id}', [SirineController::class, 'updateLevel']);
+Route::post('/sirine/global-emergency', [SirineController::class, 'globalEmergency']);
+Route::post('/sirine/heartbeat/{id}', [SirineController::class, 'heartbeat']);
 
 // Dashboard admin (AdminLTE)
 Route::get('/dashboard', [DashboardController::class, 'index']);

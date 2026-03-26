@@ -13,7 +13,7 @@ class Wilayah extends Model
         'nama_wilayah',
         'foto',
     ];
-
+    
     public function kontak()
     {
         return $this->hasMany(Kontak::class);
