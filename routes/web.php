@@ -26,13 +26,14 @@ Route::get('/kontak-wilayah', [LandingController::class, 'index']);
 
 // Sistem monitoring & kontrol sirine
 Route::get('/sirine', [SirineController::class, 'index']);
-Route::post('/sirine/store', [SirineController::class, 'store']);
-Route::get('/sirine/edit/{id}', [SirineController::class, 'edit']);
-Route::post('/sirine/update/{id}', [SirineController::class, 'update']);
-Route::post('/sirine/delete/{id}', [SirineController::class, 'destroy']);
-Route::post('/sirine/level/{id}', [SirineController::class, 'updateLevel']);
-Route::post('/sirine/global-emergency', [SirineController::class, 'globalEmergency']);
-Route::post('/sirine/heartbeat/{id}', [SirineController::class, 'heartbeat']);
+Route::get('/dashboard/sirine', [SirineController::class, 'adminIndex']);
+Route::get('/dashboard/sirine/create', [SirineController::class, 'create']);
+Route::post('/dashboard/sirine/store', [SirineController::class, 'store']);
+Route::get('/dashboard/sirine/edit/{id}', [SirineController::class, 'edit']);
+Route::post('/dashboard/sirine/update/{id}', [SirineController::class, 'update']);
+Route::post('/dashboard/sirine/delete/{id}', [SirineController::class, 'destroy']);
+Route::get('/dashboard/sirine/export/excel', [SirineController::class, 'exportExcel']);
+Route::get('/dashboard/sirine/export/pdf', [SirineController::class, 'exportPdf']);
 
 // Dashboard admin (AdminLTE)
 Route::get('/dashboard', [DashboardController::class, 'index']);

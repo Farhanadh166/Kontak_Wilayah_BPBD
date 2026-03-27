@@ -3,231 +3,178 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sirine;
-use App\Models\SirineLog;
-use App\Models\Wilayah;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SirineController extends Controller
 {
     public function index(Request $request)
     {
-        $wilayahId = $request->query('wilayah_id');
-        $status = $request->query('status');
+        $statusAktif = $request->query('status_aktif');
+        $lokasi = $request->query('lokasi');
 
-        $sirinesQuery = Sirine::with('wilayah')->orderBy('nama_sirine');
-
-        if ($wilayahId) {
-            $sirinesQuery->where('wilayah_id', $wilayahId);
-        }
-        if ($status) {
-            $sirinesQuery->where('status', $status);
-        }
+        $sirinesQuery = Sirine::query()->orderBy('lokasi')->orderBy('nama_petugas');
+        $this->applyFilters($sirinesQuery, $request);
 
         $sirines = $sirinesQuery->get();
         $sirinesForMap = $sirines->map(function ($s) {
             return [
                 'id' => $s->id,
-                'nama' => $s->nama_sirine,
-                'wilayah' => optional($s->wilayah)->nama_wilayah ?? '-',
+                'nama_petugas' => $s->nama_petugas,
+                'lokasi' => $s->lokasi,
                 'lat' => (float) $s->latitude,
                 'lng' => (float) $s->longitude,
-                'status' => $s->status,
-                'level' => $s->level_suara,
+                'status_aktif' => $s->status_aktif,
+                'kondisi_alat' => $s->kondisi_alat,
             ];
         })->values();
-        $wilayahList = Wilayah::orderBy('nama_wilayah')->get();
+        $lokasiList = Sirine::query()
+            ->whereNotNull('lokasi')
+            ->where('lokasi', '<>', '')
+            ->select('lokasi')
+            ->distinct()
+            ->orderBy('lokasi')
+            ->pluck('lokasi');
 
         $stats = [
             'total' => Sirine::count(),
-            'normal' => Sirine::where('status', 'normal')->count(),
-            'siaga' => Sirine::where('status', 'siaga')->count(),
-            'darurat' => Sirine::where('status', 'darurat')->count(),
-            'offline' => Sirine::where('status', 'offline')->count(),
+            'aktif' => Sirine::where('status_aktif', 'aktif')->count(),
+            'nonaktif' => Sirine::where('status_aktif', 'nonaktif')->count(),
         ];
 
-        $recentLogs = SirineLog::with('sirine')
-            ->latest()
-            ->limit(15)
-            ->get();
-
-        return view('sirine.index', compact(
-            'sirines',
+        return view('sirine.public.map', compact(
             'sirinesForMap',
-            'wilayahList',
+            'lokasiList',
             'stats',
-            'recentLogs',
-            'wilayahId',
-            'status'
+            'statusAktif',
+            'lokasi'
         ));
+    }
+
+    public function adminIndex()
+    {
+        $statusAktif = request()->query('status_aktif');
+        $lokasi = request()->query('lokasi');
+
+        $sirinesQuery = Sirine::query()->orderBy('lokasi')->orderBy('nama_petugas');
+        $this->applyFilters($sirinesQuery, request());
+        $sirines = $sirinesQuery->get();
+
+        $lokasiList = Sirine::query()
+            ->whereNotNull('lokasi')
+            ->where('lokasi', '<>', '')
+            ->select('lokasi')
+            ->distinct()
+            ->orderBy('lokasi')
+            ->pluck('lokasi');
+
+        return view('sirine.admin.index', compact('sirines', 'lokasiList', 'statusAktif', 'lokasi'));
+    }
+
+    public function create()
+    {
+        return view('sirine.admin.create');
     }
 
     public function store(Request $request)
     {
-        $validated = $this->validateSirine($request);
-        $validated['status'] = $this->determineStatus((int) $validated['level_suara']);
-        $validated['last_update'] = now();
-
-        Sirine::create($validated);
-
-        return redirect('/sirine')->with('success', 'Data sirine berhasil ditambahkan.');
+        Sirine::create($this->validateSirine($request));
+        return redirect('/dashboard/sirine')->with('success', 'Data sirine berhasil ditambahkan.');
     }
 
     public function edit($id)
     {
         $sirine = Sirine::findOrFail($id);
-        $wilayahList = Wilayah::orderBy('nama_wilayah')->get();
-
-        return view('sirine.edit', compact('sirine', 'wilayahList'));
+        return view('sirine.admin.edit', compact('sirine'));
     }
 
     public function update(Request $request, $id)
     {
         $sirine = Sirine::findOrFail($id);
-        $validated = $this->validateSirine($request);
-
-        $oldLevel = $sirine->level_suara;
-        $oldStatus = $sirine->status;
-        $newLevel = (int) $validated['level_suara'];
-        $newStatus = $this->determineStatus($newLevel);
-
-        DB::transaction(function () use ($sirine, $validated, $oldLevel, $oldStatus, $newLevel, $newStatus, $request) {
-            $sirine->update(array_merge($validated, [
-                'status' => $newStatus,
-                'last_update' => now(),
-            ]));
-
-            $this->writeLog(
-                $sirine->id,
-                $oldLevel,
-                $newLevel,
-                $oldStatus,
-                $newStatus,
-                'update_sirine',
-                $request->input('reason'),
-                $request
-            );
-        });
-
-        return redirect('/sirine')->with('success', 'Data sirine berhasil diupdate.');
+        $sirine->update($this->validateSirine($request));
+        return redirect('/dashboard/sirine')->with('success', 'Data sirine berhasil diupdate.');
     }
 
-    public function destroy($id, Request $request)
+    public function destroy($id)
     {
         $sirine = Sirine::findOrFail($id);
-
-        $this->writeLog(
-            $sirine->id,
-            $sirine->level_suara,
-            null,
-            $sirine->status,
-            null,
-            'delete_sirine',
-            $request->input('reason'),
-            $request
-        );
-
         $sirine->delete();
-
-        return redirect('/sirine')->with('success', 'Data sirine berhasil dihapus.');
+        return redirect('/dashboard/sirine')->with('success', 'Data sirine berhasil dihapus.');
     }
 
-    public function updateLevel(Request $request, $id)
+    public function exportExcel(): StreamedResponse
     {
-        $request->validate([
-            'level' => 'required|integer|between:1,3',
-            'reason' => 'nullable|string|max:255',
-        ]);
+        $statusAktif = request()->query('status_aktif');
+        $lokasi = request()->query('lokasi');
+        $filename = $this->buildExportFilename('xls', $statusAktif, $lokasi);
+        $sirinesQuery = Sirine::query()->orderBy('lokasi')->orderBy('nama_petugas');
+        $this->applyFilters($sirinesQuery, request());
+        $sirines = $sirinesQuery->get();
 
-        $sirine = Sirine::findOrFail($id);
-        $oldLevel = $sirine->level_suara;
-        $oldStatus = $sirine->status;
-        $newLevel = (int) $request->level;
-        $newStatus = $this->determineStatus($newLevel);
+        $headers = [
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename={$filename}",
+            'Cache-Control' => 'max-age=0',
+        ];
 
-        DB::transaction(function () use ($sirine, $oldLevel, $newLevel, $oldStatus, $newStatus, $request) {
-            $sirine->update([
-                'level_suara' => $newLevel,
-                'status' => $newStatus,
-                'last_update' => now(),
-            ]);
+        return response()->stream(function () use ($sirines, $statusAktif, $lokasi) {
+            echo "\xEF\xBB\xBF";
+            echo '<table border="1">';
+            echo '<tr><td colspan="7"><b>Filter:</b> Status = ' . e($statusAktif ?: 'Semua') . ' | Lokasi = ' . e($lokasi ?: 'Semua') . '</td></tr>';
+            echo '<tr>';
+            echo '<th>No</th><th>Nama Petugas</th><th>Lokasi</th><th>Lintang</th><th>Bujur</th><th>Status</th><th>Kondisi Alat</th>';
+            echo '</tr>';
 
-            $this->writeLog(
-                $sirine->id,
-                $oldLevel,
-                $newLevel,
-                $oldStatus,
-                $newStatus,
-                'update_level',
-                $request->reason,
-                $request
-            );
-        });
-
-        return redirect('/sirine')->with('success', 'Level sirine berhasil diubah.');
-    }
-
-    public function globalEmergency(Request $request)
-    {
-        $request->validate([
-            'reason' => 'nullable|string|max:255',
-        ]);
-
-        DB::transaction(function () use ($request) {
-            $sirines = Sirine::where('is_active', true)->get();
-            foreach ($sirines as $sirine) {
-                $oldLevel = $sirine->level_suara;
-                $oldStatus = $sirine->status;
-
-                $sirine->update([
-                    'level_suara' => 3,
-                    'status' => 'darurat',
-                    'last_update' => now(),
-                ]);
-
-                $this->writeLog(
-                    $sirine->id,
-                    $oldLevel,
-                    3,
-                    $oldStatus,
-                    'darurat',
-                    'global_emergency',
-                    $request->reason ?: 'Aktivasi darurat global',
-                    $request
-                );
+            foreach ($sirines as $i => $s) {
+                $rowColor = $s->status_aktif === 'aktif' ? '#e9fbe9' : '#efefef';
+                echo '<tr>';
+                echo '<td style="background:' . $rowColor . ';">' . ($i + 1) . '</td>';
+                echo '<td style="background:' . $rowColor . ';">' . e($s->nama_petugas) . '</td>';
+                echo '<td style="background:' . $rowColor . ';">' . e($s->lokasi) . '</td>';
+                echo '<td style="background:' . $rowColor . ';">' . e((string) $s->latitude) . '</td>';
+                echo '<td style="background:' . $rowColor . ';">' . e((string) $s->longitude) . '</td>';
+                echo '<td style="background:' . $rowColor . ';">' . strtoupper(e($s->status_aktif)) . '</td>';
+                echo '<td style="background:' . $rowColor . ';">' . e($s->kondisi_alat ?? '-') . '</td>';
+                echo '</tr>';
             }
-        });
 
-        return redirect('/sirine')->with('success', 'Mode darurat global berhasil diaktifkan.');
+            echo '</table>';
+        }, 200, $headers);
     }
 
-    public function heartbeat(Request $request, $id)
+    public function exportPdf()
     {
-        $sirine = Sirine::findOrFail($id);
-        $sirine->update([
-            'last_seen_at' => now(),
-            'status' => $sirine->status === 'offline' ? 'normal' : $sirine->status,
-        ]);
+        $statusAktif = request()->query('status_aktif');
+        $lokasi = request()->query('lokasi');
 
-        $this->writeLog(
-            $sirine->id,
-            $sirine->level_suara,
-            $sirine->level_suara,
-            $sirine->status,
-            $sirine->status,
-            'heartbeat',
-            'Perangkat melaporkan heartbeat',
-            $request
-        );
+        $sirinesQuery = Sirine::query()->orderBy('lokasi')->orderBy('nama_petugas');
+        $this->applyFilters($sirinesQuery, request());
+        $sirines = $sirinesQuery->get();
 
-        return redirect('/sirine')->with('success', 'Heartbeat perangkat berhasil direkam.');
+        $logoPath = resource_path('views/assets/bpbd.png');
+        $logoBase64 = null;
+        if (file_exists($logoPath)) {
+            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+
+        $pdf = Pdf::loadView('sirine.admin.export_pdf', [
+            'sirines' => $sirines,
+            'logoBase64' => $logoBase64,
+            'statusAktif' => $statusAktif,
+            'lokasi' => $lokasi,
+        ])
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download($this->buildExportFilename('pdf', $statusAktif, $lokasi));
     }
 
-    private function validateSirine(Request $request): array
+    private function validateSirine(Request $request)
     {
         return $request->validate([
-            'nama_sirine' => 'required|string|max:255',
-            'wilayah_id' => 'nullable|exists:wilayah,id',
+            'nama_petugas' => 'required|string|max:255',
+            'lokasi' => 'required|string|max:255',
             'latitude' => [
                 'required',
                 'numeric',
@@ -249,45 +196,44 @@ class SirineController extends Controller
                     }
                 },
             ],
-            'level_suara' => 'required|integer|between:1,3',
-            'is_active' => 'nullable|boolean',
-            'is_simulation' => 'nullable|boolean',
-            'reason' => 'nullable|string|max:255',
+            'status_aktif' => 'required|in:aktif,nonaktif',
+            'kondisi_alat' => 'nullable|string',
         ]);
     }
 
-    private function determineStatus(int $level): string
+    private function applyFilters($query, Request $request): void
     {
-        if ($level === 1) {
-            return 'normal';
+        $statusAktif = $request->query('status_aktif');
+        $lokasi = $request->query('lokasi');
+
+        if ($statusAktif) {
+            $query->where('status_aktif', $statusAktif);
         }
-        if ($level === 2) {
-            return 'siaga';
+
+        if ($lokasi) {
+            $query->where('lokasi', $lokasi);
         }
-        return 'darurat';
     }
 
-    private function writeLog(
-        int $sirineId,
-        ?int $oldLevel,
-        ?int $newLevel,
-        ?string $oldStatus,
-        ?string $newStatus,
-        string $action,
-        ?string $reason,
-        Request $request
-    ): void {
-        SirineLog::create([
-            'sirine_id' => $sirineId,
-            'old_level' => $oldLevel,
-            'new_level' => $newLevel,
-            'old_status' => $oldStatus,
-            'new_status' => $newStatus,
-            'action' => $action,
-            'changed_by' => 'system',
-            'reason' => $reason,
-            'source_ip' => $request->ip(),
-        ]);
+    private function buildExportFilename(string $extension, ?string $statusAktif, ?string $lokasi): string
+    {
+        $parts = ['sirine'];
+
+        if ($statusAktif) {
+            $parts[] = Str::slug($statusAktif);
+        } else {
+            $parts[] = 'semua-status';
+        }
+
+        if ($lokasi) {
+            $parts[] = Str::slug($lokasi);
+        } else {
+            $parts[] = 'semua-lokasi';
+        }
+
+        $parts[] = now()->format('Ymd-His');
+
+        return implode('-', $parts) . '.' . $extension;
     }
 }
 
