@@ -337,6 +337,11 @@ return [
             'url'  => '/kontak',
             'icon' => 'fas fa-address-book',
         ],
+        [
+            'text' => 'Data Sirine',
+            'url'  => '/dashboard/sirine',
+            'icon' => 'fas fa-bell',
+        ],
 
 
         ['header' => 'PENGATURAN'],

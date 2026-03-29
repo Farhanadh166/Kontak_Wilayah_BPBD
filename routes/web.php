@@ -57,6 +57,8 @@ Route::get('/wilayah/edit/{id}', [WilayahController::class, 'edit']);
 Route::post('/wilayah/update/{id}', [WilayahController::class, 'update']);
 
 Route::post('/wilayah/delete/{id}', [WilayahController::class, 'destroy']);
+Route::get('/wilayah/{id}', [WilayahController::class, 'detail'])
+    ->name('wilayah.detail');
 
 // CRUD Jabatan
 Route::get('/jabatan', [JabatanController::class, 'index']);

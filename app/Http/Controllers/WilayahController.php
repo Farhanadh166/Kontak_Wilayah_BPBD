@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Wilayah;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Kontak;
 
 class WilayahController extends Controller
 {
@@ -80,5 +81,16 @@ class WilayahController extends Controller
         $wilayah->delete();
 
         return redirect('/wilayah')->with('success', 'Data berhasil dihapus');
+    }
+
+    public function detail($id)
+    {
+        $wilayah = Wilayah::findOrFail($id);
+
+        $kontak = Kontak::with('jabatan')
+            ->where('wilayah_id', $id)
+            ->get();
+
+        return view('wilayah.detail', compact('wilayah', 'kontak'));
     }
 }
