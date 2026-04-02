@@ -21,6 +21,16 @@ Route::get('/assets/bpbd.png', function () {
 // Beranda navigasi publik
 Route::get('/', [HomeController::class, 'index']);
 
+use App\Http\Controllers\AuthController;
+
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+
+Route::get('/register', [AuthController::class, 'showRegister']);
+Route::post('/register', [AuthController::class, 'register']);
+
+Route::post('/logout', [AuthController::class, 'logout']);
+
 // Halaman direktori kontak wilayah
 Route::get('/kontak-wilayah', [LandingController::class, 'index']);
 

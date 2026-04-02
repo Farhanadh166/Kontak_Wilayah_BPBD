@@ -217,7 +217,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `batch` int NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `migrations` */
 
@@ -231,7 +231,9 @@ insert  into `migrations`(`id`,`migration`,`batch`) values
 (7,'2026_03_13_073745_create_roles_table',2),
 (8,'2026_03_25_100000_add_foto_to_wilayah_and_kontak_tables',3),
 (9,'2026_03_26_090000_create_sirines_table',4),
-(10,'2026_03_26_090100_create_sirine_logs_table',5);
+(10,'2026_03_26_090100_create_sirine_logs_table',5),
+(11,'2026_03_26_120000_refactor_sirines_fields',6),
+(12,'2026_03_26_130000_cleanup_legacy_sirine_structure',7);
 
 /*Table structure for table `password_reset_tokens` */
 
@@ -279,36 +281,10 @@ CREATE TABLE `sessions` (
 /*Data for the table `sessions` */
 
 insert  into `sessions`(`id`,`user_id`,`ip_address`,`user_agent`,`payload`,`last_activity`) values 
-('993wq22zQ54I2QdDwJE87tSKdWKk2ZvWZIkOt10u',NULL,'127.0.0.1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.3.34 Chrome/138.0.7204.251 Electron/37.7.0 Safari/537.36','YTozOntzOjY6Il90b2tlbiI7czo0MDoiSXBENnZTcnBoQWpodWdtbE55S0Mxd0o0MkFpNU9PMlFWd1NmWlBORSI7czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMCI7czo1OiJyb3V0ZSI7Tjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==',1774512862),
-('qIydUKbmIoGF4AuIutzsUQi1WuXVwKVBO4eMLlPK',NULL,'127.0.0.1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36','YTozOntzOjY6Il90b2tlbiI7czo0MDoiSHZxSVJtQ1Ztb1R4ZG15QXFZdWFMS2xUb3F5NVRTbzFHVnhLVjhzUiI7czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6Mjg6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9zaXJpbmUiO3M6NToicm91dGUiO047fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=',1774515970),
-('Sp09uc7rknltlLqstU3zB5GhyuUrH7X6e6kB2OBU',NULL,'127.0.0.1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.3.34 Chrome/138.0.7204.251 Electron/37.7.0 Safari/537.36','YTozOntzOjY6Il90b2tlbiI7czo0MDoicG9YNDhUNDZZRmRkMlFFQ21ncXRzSlRsYm1LZFZQclRselRNeFZTdCI7czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6Mjg6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9zaXJpbmUiO3M6NToicm91dGUiO047fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=',1774514062);
-
-/*Table structure for table `sirine_logs` */
-
-DROP TABLE IF EXISTS `sirine_logs`;
-
-CREATE TABLE `sirine_logs` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `sirine_id` bigint unsigned NOT NULL,
-  `old_level` tinyint unsigned DEFAULT NULL,
-  `new_level` tinyint unsigned DEFAULT NULL,
-  `old_status` enum('normal','siaga','darurat','offline') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `new_status` enum('normal','siaga','darurat','offline') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `action` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'update_level',
-  `changed_by` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `reason` text COLLATE utf8mb4_unicode_ci,
-  `source_ip` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `sirine_logs_sirine_id_foreign` (`sirine_id`),
-  CONSTRAINT `sirine_logs_sirine_id_foreign` FOREIGN KEY (`sirine_id`) REFERENCES `sirines` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-/*Data for the table `sirine_logs` */
-
-insert  into `sirine_logs`(`id`,`sirine_id`,`old_level`,`new_level`,`old_status`,`new_status`,`action`,`changed_by`,`reason`,`source_ip`,`created_at`,`updated_at`) values 
-(1,1,2,3,'siaga','darurat','update_level','system',NULL,'127.0.0.1','2026-03-26 08:59:47','2026-03-26 08:59:47');
+('9OINGJdXnNIE325TQckQbaATGzXUdpEnNqXSnwE6',NULL,'127.0.0.1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36','YTozOntzOjY6Il90b2tlbiI7czo0MDoiS2ZtdHVaVlhJbFhYZzBYUkZ0aU9Qem9DUVlCZGxOM0lzcHNsa3RsMCI7czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6Mjg6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9zaXJpbmUiO3M6NToicm91dGUiO047fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=',1774585667),
+('eqSdHEW4zS1QYOui2p7c8Ld1Ezc0y9dZDpkB3prV',NULL,'127.0.0.1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36','YTozOntzOjY6Il90b2tlbiI7czo0MDoia3YzYlY5OE8wNGJrN3c4bUUxWmkwc2VhSXdBMEVBMDl5T1htTGlrSiI7czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6Mjg6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9zaXJpbmUiO3M6NToicm91dGUiO047fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=',1774600824),
+('X78f4qxjMMbPvbL2GZgkUK6mE7ksYoSLWERrj9Gc',NULL,'127.0.0.1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.3.34 Chrome/138.0.7204.251 Electron/37.7.0 Safari/537.36','YTozOntzOjY6Il90b2tlbiI7czo0MDoiR3ZqdHdkb3R5RHpIOWd6SHdlRlBmRDl2M1hObHlsYzJjMUgyVEY2diI7czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMCI7czo1OiJyb3V0ZSI7Tjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==',1774578673),
+('XvM1vGq6Eu9YSDGg4SecvakgFZWVZ5JU2h8ZZI84',NULL,'127.0.0.1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.3.34 Chrome/138.0.7204.251 Electron/37.7.0 Safari/537.36','YTozOntzOjY6Il90b2tlbiI7czo0MDoiTDNpWXA5NHljYlZhYUlUeEtTWE94VlE1WkhpOEF5ZVdKWGxRQWpNbyI7czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMCI7czo1OiJyb3V0ZSI7Tjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==',1774578672);
 
 /*Table structure for table `sirines` */
 
@@ -316,29 +292,40 @@ DROP TABLE IF EXISTS `sirines`;
 
 CREATE TABLE `sirines` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `nama_sirine` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `wilayah_id` bigint unsigned DEFAULT NULL,
+  `nama_petugas` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `lokasi` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `latitude` decimal(10,7) NOT NULL,
   `longitude` decimal(10,7) NOT NULL,
-  `status` enum('normal','siaga','darurat','offline') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'normal',
-  `level_suara` tinyint unsigned NOT NULL DEFAULT '1',
-  `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  `is_simulation` tinyint(1) NOT NULL DEFAULT '1',
-  `last_seen_at` timestamp NULL DEFAULT NULL,
-  `last_update` timestamp NULL DEFAULT NULL,
+  `status_aktif` enum('aktif','nonaktif') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'aktif',
+  `kondisi_alat` text COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `sirines_wilayah_id_foreign` (`wilayah_id`),
-  CONSTRAINT `sirines_wilayah_id_foreign` FOREIGN KEY (`wilayah_id`) REFERENCES `wilayah` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `sirines` */
 
-insert  into `sirines`(`id`,`nama_sirine`,`wilayah_id`,`latitude`,`longitude`,`status`,`level_suara`,`is_active`,`is_simulation`,`last_seen_at`,`last_update`,`created_at`,`updated_at`) values 
-(1,'Ombak',15,-0.9471000,100.4172000,'darurat',3,1,1,NULL,'2026-03-26 08:59:47','2026-03-26 08:38:14','2026-03-26 08:59:47'),
-(2,'bpbd',10,-0.9386030,100.3611770,'darurat',3,1,1,NULL,'2026-03-26 08:50:10','2026-03-26 08:50:10','2026-03-26 08:50:10'),
-(3,'bpbd',15,-0.9386030,100.3611770,'darurat',3,1,1,NULL,'2026-03-26 08:53:08','2026-03-26 08:53:08','2026-03-26 08:53:08');
+insert  into `sirines`(`id`,`nama_petugas`,`lokasi`,`latitude`,`longitude`,`status_aktif`,`kondisi_alat`,`created_at`,`updated_at`) values 
+(1,'Mediaris Djorghy','Mesjid Raya Nailus Sa\'adah, Jl. Adinegoro',-0.8504200,100.3348600,'aktif','Suara Jelas dan Bersih','2026-03-26 08:38:14','2026-03-27 03:20:11'),
+(3,'Arpen Aipo','Mesjid Al Muhajirin, Pasir Putih',-0.8656500,100.3354800,'nonaktif','Tidak Berfungsi','2026-03-26 08:53:08','2026-03-27 03:26:50'),
+(4,'Wahyu Saputra','Shelter Darussalam, Linggarjati',-0.8680800,100.3394900,'aktif','Jelas dan bersih','2026-03-27 02:33:03','2026-03-27 03:28:35'),
+(5,'Rifqa Mardatillah','Shelter Jl. Wisma Indah Parupuk',-0.8817200,100.3441100,'aktif','Jelas dan Bersih','2026-03-27 03:30:26','2026-03-27 03:30:26'),
+(6,'Firsa Alfarezi','Masjid Darul Muttaqin, Pasia Nan Tigo',-0.8517300,100.3277567,'aktif','Suara Putus-putus dan tidak jelas','2026-03-27 03:38:59','2026-03-27 03:38:59'),
+(7,'Ilham Sanitria','Kampus UNP Air Tawar',-0.8966167,100.3501861,'nonaktif','Tidak Berfungsi','2026-03-27 03:41:39','2026-03-27 03:45:47'),
+(8,'Surung M Sinaga, SKM','Kampus UBH Ulak Karang',-0.9060500,100.3446000,'aktif','Jelas dan Bersih','2026-03-27 03:42:26','2026-03-27 03:42:26'),
+(10,'Suryadi, S.Kom','SMA 1 Padang, Jl. Belanti',-0.9189583,100.3546110,'aktif','Jelas dan Bersih','2026-03-27 03:44:20','2026-03-27 03:44:20'),
+(11,'Agung Dwiky Pradipta','Kantor DPRD Jl. Khatib Sulaiman',-0.9067056,100.3520500,'nonaktif','Tidak Berfungsi','2026-03-27 03:45:26','2026-03-27 03:45:26'),
+(13,'Apes Syuriadi Putra','Surau Angku Sidi Alam (Masjid Jihad Jondul V, Parupuk Tabing)',-0.8761553,100.3419714,'aktif','Jelas dan Bersih','2026-03-27 03:49:41','2026-03-27 03:49:41'),
+(14,'Donal Khairi','SMP N 7 Padang, Lolong Belanti',-0.9393000,100.3540940,'aktif','Jelas dan Berfungsi','2026-03-27 03:53:07','2026-03-27 03:53:07'),
+(15,'Wilman','Masjid Al Falah, Kel. Padang Sarai',-0.8080784,100.3078850,'aktif','Jelas dan Berfungsi','2026-03-27 03:55:51','2026-03-27 03:55:51'),
+(16,'Tara Suci Ramadhani','GOR Haji Agus Salim',-0.9302770,100.3602020,'aktif','Jelas dan Berfungsi','2026-03-27 03:57:01','2026-03-27 03:57:01'),
+(17,'Acil Erbara','Kantor Gubernur Jl. Jend. Sudirman',-0.9368694,100.3601000,'aktif','Jelas dan Berfungsi','2026-03-27 03:57:56','2026-03-27 03:57:56'),
+(18,'LS. Rozano','Kantor BAPPEDA Prov. Sumatera Barat',-0.9258834,100.3608483,'aktif','Jelas dan Berfungsi','2026-03-27 04:04:09','2026-03-27 04:04:09'),
+(19,'Dilla Ulfa Desma, S.Si','SDN 03 & SDN 04 Purus',-0.9393000,100.3540940,'aktif','Jelas dan Berfungsi','2026-03-27 04:05:01','2026-03-27 04:05:01'),
+(20,'Petugas Piket/Security','Kantor BPBD Prov. Sumatera Barat',-0.9387050,100.3611433,'aktif','Jelas dan Berfungsi','2026-03-27 04:12:43','2026-03-27 04:12:43'),
+(21,'Afrinaldi','SDN 24 Ujung Gurun',-0.9325000,100.3541300,'aktif','Jelas dan Berfungsi','2026-03-27 04:13:30','2026-03-27 04:13:30'),
+(22,'Herwin','Mercure Hotel',-0.9360972,100.3528170,'aktif','Jelas dan Berfungsi','2026-03-27 04:14:11','2026-03-27 04:14:11'),
+(23,'Agus Prayitno, A.Md.','Bank Nagari Pusat Jl. Pemuda',-0.9493917,100.3545917,'aktif','Jelas dan Brfungsi','2026-03-27 04:15:03','2026-03-27 04:15:03');
 
 /*Table structure for table `users` */
 

@@ -24,7 +24,7 @@
 
             <div class="form-group">
                 <label>Koordinat (Lintang)</label>
-                <input type="number" step="0.0000001" name="latitude" class="form-control" required>
+                <input type="number" step="any" name="latitude" class="form-control" required>
             </div>
 
             <div class="form-group">

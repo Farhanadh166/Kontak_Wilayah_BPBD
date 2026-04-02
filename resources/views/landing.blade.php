@@ -339,6 +339,7 @@
                 <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
                     <a href="#daftar-kontak" class="btn btn-primary-soft">Lihat Daftar Kontak</a>
                     <a href="/dashboard" class="btn btn-outline-light-soft">Masuk Dashboard Admin</a>
+                    <a href="/sirine" class="btn btn-warning">Lihat Status Sirine</a>
                 </div>
                 <p class="text-muted-soft mb-0" style="font-size:.8rem;">
                     Data diambil langsung dari basis data internal. Ikuti arahan resmi saat keadaan darurat.
@@ -416,7 +417,132 @@
             @endphp
 
             <div class="row g-3 g-md-4" id="cards-container">
+                @php
+                    // Deteksi "kantor pusat" berbasis nama wilayah
+                    $pusatWilayahId = null;
+                    foreach ($grouped as $gwId => $gItems) {
+                        $n = \Illuminate\Support\Str::lower(trim(optional($gItems->first()->wilayah)->nama_wilayah ?? ''));
+                        if ($n === 'provinsi sumatera barat') { $pusatWilayahId = $gwId; break; }
+                    }
+                @endphp
+
+                {{-- Kartu khusus: Kantor Pusat BPBD Sumatera Barat --}}
+                @if($pusatWilayahId !== null)
+                    @php
+                        $items = $grouped[$pusatWilayahId];
+                        $wilayahNama    = 'Kantor Pusat BPBD Sumatera Barat';
+                        $wilayahLogoUrl = optional($items->first()->wilayah)->foto
+                            ? \Illuminate\Support\Facades\Storage::url(optional($items->first()->wilayah)->foto)
+                            : url('/assets/bpbd.png');
+
+                        $normalized = $items->map(function ($item) {
+                            $role = \Illuminate\Support\Str::lower(trim(optional($item->jabatan)->nama_jabatan ?? ''));
+                            if (in_array($role, ['kabid kl','kabid kedaruratan & logistik','kepala bidang kedaruratan & logistik']))
+                                $role = 'kepala bidang kedaruratan & logistik';
+                            elseif (in_array($role, ['kalaksa','kepala pelaksana']))
+                                $role = 'kepala pelaksana';
+                            elseif ($role === 'kasi kedarutan')
+                                $role = 'kasi kedaruratan';
+                            $item->role_normalized = $role;
+                            return $item;
+                        });
+
+                        $kalaksa   = $normalized->firstWhere('role_normalized', 'kepala pelaksana');
+                        $kabid     = $normalized->firstWhere('role_normalized', 'kepala bidang kedaruratan & logistik');
+                        $kasiKed   = $normalized->firstWhere('role_normalized', 'kasi kedaruratan');
+                        $kasiLog   = $normalized->firstWhere('role_normalized', 'kasi logistik');
+                        $operators = $normalized->filter(fn($p) => in_array($p->role_normalized, ['operator pusdalops','operator database']))->values();
+
+                        $allPersonIds = $normalized->map(fn($p) => [
+                            'wilayah_id' => optional($p->wilayah)->id,
+                            'jabatan_id' => optional($p->jabatan)->id,
+                            'nama'       => \Illuminate\Support\Str::lower($p->nama),
+                            'hp'         => \Illuminate\Support\Str::lower($p->no_hp),
+                        ])->toArray();
+                    @endphp
+
+                    <div class="col-12 kontak-card"
+                         data-wilayah-id="{{ $pusatWilayahId !== 'tanpa-wilayah' ? $pusatWilayahId : '' }}"
+                         data-persons="{{ htmlspecialchars(json_encode($allPersonIds), ENT_QUOTES) }}">
+
+                        <div class="wilayah-card" style="border-color: rgba(34,211,238,0.55);">
+                            <div class="card-body-inner">
+                                <div class="region-header">
+                                    <img class="region-logo" src="{{ $wilayahLogoUrl }}" alt="Logo {{ $wilayahNama }}">
+                                    <div>
+                                        <div class="region-name">{{ $wilayahNama }}</div>
+                                        <div class="region-count">{{ $items->count() }} kontak terdaftar</div>
+                                    </div>
+                                </div>
+
+                                <hr class="card-divider">
+
+                                <div class="kalaksa-block">
+                                    <img class="kalaksa-photo"
+                                         src="{{ $kalaksa && $kalaksa->foto ? \Illuminate\Support\Facades\Storage::url($kalaksa->foto) : url('/assets/bpbd.png') }}"
+                                         alt="{{ $kalaksa ? $kalaksa->nama : 'Kalaksa' }}"
+                                         onerror="this.src='{{ url('/assets/bpbd.png') }}'">
+                                    <div class="kalaksa-info">
+                                        <div class="kalaksa-role">Kepala Pelaksana</div>
+                                        @if($kalaksa)
+                                            <div class="kalaksa-name" title="{{ $kalaksa->nama }}">{{ $kalaksa->nama }}</div>
+                                            <a href="{{ $waLink($kalaksa->no_hp) }}" target="_blank" rel="noopener" class="kalaksa-phone">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                                                {{ $kalaksa->no_hp }}
+                                            </a>
+                                        @else
+                                            <div class="kalaksa-name" style="color:#475569; font-style:italic; font-weight:400;">Belum ada data</div>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="jabatan-chips">
+                                    @php
+                                        $chipList = [
+                                            ['label' => 'Kabid KL',       'person' => $kabid,   '--c' => '59,130,246'],
+                                            ['label' => 'Kasi Kedaruratan','person' => $kasiKed, '--c' => '249,115,22'],
+                                            ['label' => 'Kasi Logistik',  'person' => $kasiLog, '--c' => '34,197,94'],
+                                        ];
+                                    @endphp
+                                    @foreach($chipList as $chip)
+                                        @if($chip['person'])
+                                            <span class="chip chip-filled" style="--c:{{ $chip['--c'] }}">
+                                                <span class="chip-dot"></span>
+                                                {{ $chip['label'] }}
+                                            </span>
+                                        @else
+                                            <span class="chip chip-empty">{{ $chip['label'] }}</span>
+                                        @endif
+                                    @endforeach
+                                </div>
+
+                                <div class="operator-row">
+                                    @forelse($operators->take(4) as $op)
+                                        <div class="op-chip">
+                                            <img class="op-chip-avatar"
+                                                 src="{{ $op->foto ? \Illuminate\Support\Facades\Storage::url($op->foto) : url('/assets/bpbd.png') }}"
+                                                 alt="{{ $op->nama }}"
+                                                 onerror="this.src='{{ url('/assets/bpbd.png') }}'">
+                                            <span class="op-chip-name" title="{{ $op->nama }}">{{ $op->nama }}</span>
+                                        </div>
+                                    @empty
+                                        <span class="op-empty">Belum ada operator</span>
+                                    @endforelse
+                                    @if($operators->count() > 4)
+                                        <div class="op-chip">
+                                            <span style="color:#64748b; font-size:.7rem;">+{{ $operators->count() - 4 }} lainnya</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 @foreach($grouped as $wilayahId => $items)
+                    @if($pusatWilayahId !== null && (string)$wilayahId === (string)$pusatWilayahId)
+                        @continue
+                    @endif
                     @php
                         $wilayahNama    = optional($items->first()->wilayah)->nama_wilayah ?? 'Tanpa Wilayah';
                         $wilayahLogoUrl = optional($items->first()->wilayah)->foto

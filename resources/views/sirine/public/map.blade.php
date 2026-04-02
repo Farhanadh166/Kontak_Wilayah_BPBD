@@ -11,17 +11,79 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-    <style>
-        html, body { height: 100%; margin: 0; }
-        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e5e7eb; }
-        .panel { background: linear-gradient(180deg, rgba(2, 6, 23, 0.7), rgba(15, 23, 42, 0.93)); border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 1rem; box-shadow: 0 16px 38px rgba(2, 6, 23, 0.6); }
-        #map { height: calc(100vh - 210px); border-radius: .9rem; min-height: 640px; }
-        .stat-box { border-radius: .85rem; padding: .8rem .95rem; background: rgba(15,23,42,.6); border:1px solid rgba(148,163,184,.2);}
-        .stat-box .label { font-size:.72rem; text-transform: uppercase; letter-spacing: .1em; color:#cbd5e1;}
-        .stat-box .value { font-size:1.15rem; font-weight:800; color:#fff;}
-        .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #0b1220; color: #e5e7eb; border:1px solid rgba(148,163,184,.2); }
-        .small-muted { color: rgba(229,231,235,.72); font-size:.82rem; }
-    </style>
+   <style>
+html, body { height: 100%; margin: 0; }
+body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e5e7eb; }
+
+.panel {
+    background: linear-gradient(180deg, rgba(2, 6, 23, 0.7), rgba(15, 23, 42, 0.93));
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 1rem;
+    box-shadow: 0 16px 38px rgba(2, 6, 23, 0.6);
+}
+
+#map { height: calc(100vh - 210px); border-radius: .9rem; min-height: 640px; }
+
+.stat-box {
+    border-radius: .85rem;
+    padding: .8rem .95rem;
+    background: rgba(15,23,42,.6);
+    border:1px solid rgba(148,163,184,.2);
+}
+
+.stat-box .label {
+    font-size:.72rem;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color:#cbd5e1;
+}
+
+.stat-box .value {
+    font-size:1.15rem;
+    font-weight:800;
+    color:#fff;
+}
+
+.small-muted { color: rgba(229,231,235,.72); font-size:.82rem; }
+
+/* 🔥 ANIMASI PULSE */
+.pulse {
+    animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* 🔥 ANIMASI RADAR */
+.radar {
+    position: relative;
+}
+.radar::after {
+    content: "";
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.4);
+    top: -6px;
+    left: -6px;
+    animation: radar 2s infinite;
+}
+@keyframes radar {
+    0% { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* popup */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+    background: #0b1220;
+    color: #e5e7eb;
+    border:1px solid rgba(148,163,184,.2);
+}
+</style>
 </head>
 <body>
 <div class="container py-4">
@@ -80,60 +142,85 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
-    const sirines = @json($sirinesForMap);
+const sirines = @json($sirinesForMap);
 
-    const sumbarBounds = L.latLngBounds(L.latLng(-2.60, 98.65), L.latLng(0.55, 101.55));
-    const map = L.map('map', { maxBounds: sumbarBounds, maxBoundsViscosity: 1.0, minZoom: 10 });
-    map.fitBounds(sumbarBounds);
+const sumbarBounds = L.latLngBounds(
+    L.latLng(-2.60, 98.65),
+    L.latLng(0.55, 101.55)
+);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
+const map = L.map('map', {
+    maxBounds: sumbarBounds,
+    maxBoundsViscosity: 1.0,
+    minZoom: 10,
+    zoomAnimation: true,
+    fadeAnimation: true
+});
 
-    function createPin(statusAktif) {
-        const color = statusAktif === 'aktif' ? '#22c55e' : '#6b7280';
-        const label = statusAktif === 'aktif' ? 'A' : 'N';
-        return L.divIcon({
-            className: '',
-            html: `
-                <svg width="28" height="40" viewBox="0 0 28 40" xmlns="http://www.w3.org/2000/svg">
+map.fitBounds(sumbarBounds);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+/* 🔥 CUSTOM MARKER */
+function createPin(statusAktif) {
+    const isActive = statusAktif === 'aktif';
+    const color = isActive ? '#22c55e' : '#6b7280';
+    const label = isActive ? 'A' : 'N';
+
+    return L.divIcon({
+        className: '',
+        html: `
+            <div class="${isActive ? 'radar pulse' : ''}">
+                <svg width="28" height="40" viewBox="0 0 28 40">
                     <path d="M14 1C7 1 1.5 6.5 1.5 13.5C1.5 22.5 14 39 14 39C14 39 26.5 22.5 26.5 13.5C26.5 6.5 21 1 14 1Z"
                           fill="${color}" stroke="#ffffff" stroke-width="2"/>
                     <circle cx="14" cy="14" r="7.5" fill="#0b1220"/>
-                    <text x="14" y="17.2" text-anchor="middle" font-size="9.5" font-weight="700" fill="#ffffff">${label}</text>
+                    <text x="14" y="17.2" text-anchor="middle"
+                          font-size="9.5" font-weight="700"
+                          fill="#ffffff">${label}</text>
                 </svg>
-            `,
-            iconSize: [28, 40],
-            iconAnchor: [14, 38],
-            popupAnchor: [0, -34]
-        });
-    }
-
-    const clusterGroup = L.markerClusterGroup({
-        disableClusteringAtZoom: 13,
-        spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false,
-        maxClusterRadius: 45
-    });
-
-    sirines.forEach((s) => {
-        const popup = `
-            <div style="min-width: 240px;">
-                <div style="font-weight:700; margin-bottom:4px;">Petugas: ${s.nama_petugas}</div>
-                <div style="font-size:12px; color:#cbd5e1; margin-bottom:4px;">Lokasi: ${s.lokasi}</div>
-                <div style="font-size:12px; color:#cbd5e1; margin-bottom:4px;">Koordinat: ${s.lat}, ${s.lng}</div>
-                <div style="font-size:12px; margin-bottom:4px;">Status: <b>${String(s.status_aktif).toUpperCase()}</b></div>
-                <div style="font-size:12px; color:#e2e8f0;">Kondisi Alat: ${s.kondisi_alat ? s.kondisi_alat : '-'}</div>
             </div>
-        `;
-
-        clusterGroup.addLayer(
-            L.marker([s.lat, s.lng], { icon: createPin(s.status_aktif) }).bindPopup(popup)
-        );
+        `,
+        iconSize: [28, 40],
+        iconAnchor: [14, 38],
+        popupAnchor: [0, -34]
     });
+}
 
-    map.addLayer(clusterGroup);
+/* 🔥 CLUSTER */
+const clusterGroup = L.markerClusterGroup({
+    disableClusteringAtZoom: 13,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    maxClusterRadius: 45
+});
+
+/* 🔥 LOAD MARKER DENGAN ANIMASI */
+sirines.forEach((s, index) => {
+
+    const popup = `
+        <div style="min-width: 240px;">
+            <div style="font-weight:700;">Petugas: ${s.nama_petugas}</div>
+            <div style="font-size:12px;">Lokasi: ${s.lokasi}</div>
+            <div style="font-size:12px;">Koordinat: ${s.lat}, ${s.lng}</div>
+            <div style="font-size:12px;">Status: <b>${s.status_aktif.toUpperCase()}</b></div>
+            <div style="font-size:12px;">Kondisi: ${s.kondisi_alat || '-'}</div>
+        </div>
+    `;
+
+    setTimeout(() => {
+        clusterGroup.addLayer(
+            L.marker([s.lat, s.lng], {
+                icon: createPin(s.status_aktif)
+            }).bindPopup(popup)
+        );
+    }, index * 200); // delay muncul
+});
+
+map.addLayer(clusterGroup);
 </script>
 </body>
 </html>

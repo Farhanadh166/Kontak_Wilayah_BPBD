@@ -109,6 +109,7 @@
 <header class="hero">
     <div class="container">
         <div class="row align-items-center g-4">
+            
             <div class="col-lg-7">
                 <span class="badge bg-slate-900 border border-info-subtle text-info badge-pill mb-3 px-3 py-2">
                     Digitalisasi BPBD Sumbar 1.0
@@ -120,10 +121,11 @@
                     Platform untuk <b>mendigitalkan proyek-proyek</b> yang ada di Sumatera Barat.
                     Gunakan menu di bawah untuk membuka layanan yang tersedia.
                 </p>
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="/kontak-wilayah" class="btn btn-primary-soft">Direktori Kontak Wilayah</a>
-                    <a href="/sirine" class="btn btn-outline-light-soft">Monitoring &amp; Kontrol Sirine</a>
-                </div>
+<div class="d-flex flex-wrap gap-2">
+    <a href="/kontak-wilayah" class="btn btn-primary-soft">Direktori Kontak Wilayah</a>
+    <a href="/sirine" class="btn btn-outline-light-soft">Monitoring &amp; Kontrol Sirine</a>
+    <a href="/login" class="btn btn-outline-info">Login Admin</a>
+</div>
             </div>
             <div class="col-lg-5">
                 <div class="d-flex justify-content-lg-end">
