@@ -26,5 +26,19 @@
     </div>
 </div>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    let redirectUrl = sessionStorage.getItem('redirect_after_login');
+
+    if (redirectUrl) {
+        let input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'redirect_to';
+        input.value = redirectUrl;
+
+        document.querySelector('form').appendChild(input);
+    }
+});
+</script>
 </body>
 </html>

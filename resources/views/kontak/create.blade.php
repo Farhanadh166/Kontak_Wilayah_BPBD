@@ -39,6 +39,11 @@
 </div>
 
 <div class="form-group">
+<label>NIP</label>
+<input type="text" name="nip" class="form-control">
+</div>
+
+<div class="form-group">
 <label>No HP</label>
 <input type="text" name="no_hp" class="form-control">
 </div>
@@ -47,6 +52,16 @@
 <label>Foto Person (opsional)</label>
 <input type="file" name="foto" class="form-control" accept="image/*">
 </div>
+
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
 <button class="btn btn-primary">Simpan</button>
 <a href="/kontak" class="btn btn-secondary">Kembali</a>

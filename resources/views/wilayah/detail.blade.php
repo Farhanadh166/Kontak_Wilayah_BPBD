@@ -186,7 +186,6 @@
             border-color: rgba(56,189,248,.4);
             box-shadow: 0 12px 32px rgba(2,6,23,.55);
         }
-        /* Warna aksen per jabatan */
         .role-kalaksa          { --c: 34,211,238; }
         .role-kabid            { --c: 59,130,246; }
         .role-kasi-kedaruratan { --c: 249,115,22; }
@@ -241,6 +240,49 @@
             color: rgba(148,163,184,.45);
             font-size: .85rem;
             font-style: italic;
+        }
+
+        /* ── WARNING BANNER (baru, kompak) ──────── */
+        .warning-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: .65rem;
+            background: rgba(251,191,36,.07);
+            border: 1px solid rgba(251,191,36,.28);
+            border-left: 3px solid #f59e0b;
+            border-radius: .65rem;
+            padding: .6rem .9rem;
+            margin-bottom: .85rem;
+            font-size: .8rem;
+            color: rgba(251,220,130,.85);
+            line-height: 1.5;
+        }
+        .warning-banner-icon {
+            font-size: .95rem;
+            flex-shrink: 0;
+            margin-top: .05rem;
+        }
+        .warning-banner strong {
+            color: #fbbf24;
+            font-weight: 700;
+        }
+        .warning-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .35rem;
+            margin-top: .35rem;
+        }
+        .warning-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .25rem;
+            font-size: .72rem;
+            font-weight: 600;
+            background: rgba(251,191,36,.1);
+            border: 1px solid rgba(251,191,36,.3);
+            color: #fbbf24;
+            border-radius: 999px;
+            padding: .12rem .55rem;
         }
 
         /* ── TABEL SEMUA KONTAK ──────────────────── */
@@ -352,7 +394,6 @@
             .hero-title { font-size: 1.35rem; }
             .stat-num { font-size: 1.1rem; }
             .pejabat-grid { grid-template-columns: 1fr; }
-            /* Tabel: hide kolom foto & jabatan di layar sangat kecil */
             .col-foto, .col-jabatan { display: none; }
         }
         @media (max-width: 400px) {
@@ -391,13 +432,12 @@
 <main class="container py-4">
 
     @php
-        // Helper: ubah nomor HP Indonesia → link WhatsApp
         function waLink(string $hp): string {
-            $clean = preg_replace('/\D/', '', $hp);          // hapus non-digit
+            $clean = preg_replace('/\D/', '', $hp);
             if (str_starts_with($clean, '0')) {
-                $clean = '62' . substr($clean, 1);           // 08xx → 628xx
+                $clean = '62' . substr($clean, 1);
             } elseif (!str_starts_with($clean, '62')) {
-                $clean = '62' . $clean;                      // tanpa awalan → tambah 62
+                $clean = '62' . $clean;
             }
             return 'https://wa.me/' . $clean;
         }
@@ -406,106 +446,65 @@
     @php
         $normalized = $kontak->map(function ($item) {
             $role = \Illuminate\Support\Str::lower(trim(optional($item->jabatan)->nama_jabatan ?? ''));
-            if (in_array($role, ['kabid kl','kabid kedaruratan & logistik','kepala bidang kedaruratan & logistik']))
+            if (str_contains($role, 'kabid')) {
                 $role = 'kepala bidang kedaruratan & logistik';
-            elseif (in_array($role, ['kalaksa','kepala pelaksana']))
+            } elseif (str_contains($role, 'kalaksa') || str_contains($role, 'kepala pelaksana')) {
                 $role = 'kepala pelaksana';
-            elseif ($role === 'kasi kedarutan')
+            } elseif (str_contains($role, 'kedaruratan')) {
                 $role = 'kasi kedaruratan';
+            } elseif (str_contains($role, 'logistik')) {
+                $role = 'kasi logistik';
+            } elseif (str_contains($role, 'pusdalops')) {
+                $role = 'operator pusdalops';
+            } elseif (str_contains($role, 'database')) {
+                $role = 'operator database';
+            }
             $item->role_norm = $role;
             return $item;
         });
-
-        $operators = $normalized->filter(fn($p) => in_array($p->role_norm, ['operator pusdalops','operator database']))->values();
-        $pejabat   = $normalized->filter(fn($p) => !in_array($p->role_norm, ['operator pusdalops','operator database']))->values();
-
-        $singleRoles = [
-            'kepala pelaksana'                     => ['label' => 'Kepala Pelaksana',                      'css' => 'role-kalaksa'],
-            'kepala bidang kedaruratan & logistik' => ['label' => 'Kepala Bidang Kedaruratan & Logistik',  'css' => 'role-kabid'],
-            'kasi kedaruratan'                     => ['label' => 'Kasi Kedaruratan',                      'css' => 'role-kasi-kedaruratan'],
-            'kasi logistik'                        => ['label' => 'Kasi Logistik',                         'css' => 'role-kasi-logistik'],
-        ];
-
-        $knownRoles = array_keys($singleRoles);
-        $others = $normalized->filter(fn($p) =>
-            !in_array($p->role_norm, $knownRoles) &&
-            !in_array($p->role_norm, ['operator pusdalops','operator database'])
-        )->values();
     @endphp
 
-    <!-- Stat Strip -->
-    <div class="stat-strip">
-        <div class="stat-pill">
-            <div class="stat-icon" style="background:rgba(56,189,248,.15);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none"
-                     stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-            </div>
-            <div>
-                <div class="stat-num" style="color:#38bdf8;">{{ $kontak->count() }}</div>
-                <div class="stat-label">Total Kontak</div>
-            </div>
-        </div>
-        <div class="stat-pill">
-            <div class="stat-icon" style="background:rgba(134,239,172,.12);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none"
-                     stroke="#86efac" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/>
-                    <line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
-                </svg>
-            </div>
-            <div>
-                <div class="stat-num" style="color:#86efac;">{{ $pejabat->count() }}</div>
-                <div class="stat-label">Pejabat</div>
-            </div>
-        </div>
-        <div class="stat-pill">
-            <div class="stat-icon" style="background:rgba(192,132,252,.12);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none"
-                     stroke="#c084fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
-                </svg>
-            </div>
-            <div>
-                <div class="stat-num" style="color:#c084fc;">{{ $operators->count() }}</div>
-                <div class="stat-label">Operator</div>
-            </div>
-        </div>
-    </div>
+    @php
+        $requiredRoles = [
+            'kepala pelaksana'                      => 'Kepala Pelaksana',
+            'kepala bidang kedaruratan & logistik'  => 'Kabid Kedaruratan dan Logistik',
+            'kasi kedaruratan'                      => 'Kasi Kedaruratan',
+            'kasi logistik'                         => 'Kasi Logistik',
+            'operator pusdalops'                    => 'Operator Pusdalops',
+            'operator database'                     => 'Operator Database',
+        ];
 
-    <!-- ── Pejabat Struktural ── -->
-    <div class="section-label">Pejabat Struktural</div>
-    <div class="pejabat-grid">
-        @foreach($singleRoles as $roleKey => $roleInfo)
-            @php $person = $normalized->firstWhere('role_norm', $roleKey); @endphp
-            <div class="pejabat-card {{ $roleInfo['css'] }}">
-                <img class="pejabat-photo"
-                     src="{{ $person && $person->foto ? Storage::url($person->foto) : url('/assets/bpbd.png') }}"
-                     alt="{{ $person ? $person->nama : $roleInfo['label'] }}"
-                     onerror="this.src='{{ url('/assets/bpbd.png') }}'">
-                <div class="pejabat-info">
-                    <div class="pejabat-role">{{ $roleInfo['label'] }}</div>
-                    @if($person)
-                        <div class="pejabat-name">{{ $person->nama }}</div>
-                        <a href="{{ waLink($person->no_hp) }}" target="_blank" rel="noopener" class="pejabat-phone">
-                            {{-- Ikon WhatsApp --}}
-                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
-                            </svg>
-                            {{ $person->no_hp }}
-                        </a>
-                    @else
-                        <div class="empty-role">Belum ada data</div>
-                    @endif
-                </div>
-            </div>
-        @endforeach
-    </div>
+        $missingRoles = [];
+        foreach ($requiredRoles as $key => $label) {
+            if (!$normalized->firstWhere('role_norm', $key)) {
+                $missingRoles[] = $label;
+            }
+        }
+
+        $singleDisplay = collect();
+        foreach ($requiredRoles as $key => $label) {
+            $person = $normalized->firstWhere('role_norm', $key);
+            if ($person) $singleDisplay->push($person);
+        }
+    @endphp
 
     <!-- ── Semua Kontak (Tabel) ── -->
-    <div class="section-label" style="margin-top: .5rem;">Semua Kontak Terdaftar</div>
+    <div class="section-label" style="margin-top:.5rem;">Semua Kontak Terdaftar</div>
+
+    {{-- ── WARNING: data belum lengkap (kompak, di atas tabel) ── --}}
+    @if(count($missingRoles) > 0)
+    <div class="warning-banner">
+        <span class="warning-banner-icon">⚠️</span>
+        <div>
+            <strong>Data belum lengkap</strong> — jabatan berikut belum memiliki kontak:
+            <div class="warning-chips">
+                @foreach($missingRoles as $role)
+                    <span class="warning-chip">{{ $role }}</span>
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
 
     <div class="search-wrap">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -530,7 +529,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($kontak as $k)
+                    @foreach($singleDisplay as $k)
                     <tr>
                         <td class="col-foto">
                             <img class="td-foto"
@@ -540,7 +539,6 @@
                         </td>
                         <td>
                             <span style="font-weight:600; color:#f1f5f9;">{{ $k->nama }}</span>
-                            {{-- Jabatan tampil di bawah nama saat kolom jabatan hidden di mobile --}}
                             <div class="d-sm-none mt-1">
                                 <span class="badge-jabatan">{{ optional($k->jabatan)->nama_jabatan ?? '-' }}</span>
                             </div>
@@ -550,7 +548,6 @@
                         </td>
                         <td>
                             <a href="{{ waLink($k->no_hp) }}" target="_blank" rel="noopener" class="phone-link">
-                                {{-- Ikon WhatsApp --}}
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
                                 </svg>

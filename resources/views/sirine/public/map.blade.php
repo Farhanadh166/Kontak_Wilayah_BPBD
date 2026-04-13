@@ -86,6 +86,8 @@ body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e5e7eb; }
 </style>
 </head>
 <body>
+
+    
 <div class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
@@ -95,7 +97,7 @@ body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e5e7eb; }
         </div>
         <div class="d-flex gap-2">
             <a href="/" class="btn btn-outline-light btn-sm">Home</a>
-            <a href="/dashboard/sirine" class="btn btn-outline-light btn-sm">Input/Edit Data (Admin)</a>
+            <a href="/login" class="btn btn-outline-light btn-sm">Login</a>
         </div>
     </div>
 

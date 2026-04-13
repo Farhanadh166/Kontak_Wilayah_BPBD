@@ -24,7 +24,21 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            return redirect('/dashboard');
+
+            $user = Auth::user();
+
+            // 🔥 PRIORITAS 1: ADMIN HARUS KE DASHBOARD
+            if ($user->role == 'admin') {
+                return redirect('/dashboard');
+            }
+
+            // 🔥 PRIORITAS 2: USER → redirect ke halaman sebelumnya
+            if ($request->redirect_to) {
+                return redirect($request->redirect_to);
+            }
+
+            // 🔥 DEFAULT USER
+            return redirect('/kontak-wilayah');
         }
 
         return back()->with('error', 'Email atau password salah');
@@ -48,6 +62,7 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => 'user', // default user
         ]);
 
         return redirect('/login')->with('success', 'Registrasi berhasil!');
@@ -57,8 +72,10 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect('/login');
+
+        return redirect('/kontak-wilayah'); // ✅ arahkan ke sini
     }
 }

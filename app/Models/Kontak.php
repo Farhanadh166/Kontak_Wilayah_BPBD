@@ -12,6 +12,7 @@ class Kontak extends Model
         'wilayah_id',
         'jabatan_id',
         'nama',
+        'nip',
         'no_hp',
         'foto',
     ];

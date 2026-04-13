@@ -313,7 +313,7 @@ return [
 
         // Dashboard
         [
-            'text' => 'Dashboard',
+            'text' => 'Home',
             'url'  => '/',
             'icon' => 'fas fa-home',
         ],

@@ -49,12 +49,15 @@ Route::get('/dashboard/sirine/export/pdf', [SirineController::class, 'exportPdf'
 Route::get('/dashboard', [DashboardController::class, 'index']);
 
 // CRUD Kontak
-Route::get('/kontak', [KontakController::class, 'index']);
-Route::get('/kontak/create', [KontakController::class, 'create']);
-Route::post('/kontak/store', [KontakController::class, 'store']);
+// CRUD Kontak
+Route::get('/kontak',             [KontakController::class, 'index']);
+Route::get('/kontak/create',      [KontakController::class, 'create']);
+Route::post('/kontak/store',      [KontakController::class, 'store']);
+Route::get('/kontak/edit/{id}',   [KontakController::class, 'edit']);
 
-Route::get('/kontak/edit/{id}', [KontakController::class, 'edit']);
-Route::post('/kontak/update/{id}', [KontakController::class, 'update']);
+// ✅ Ganti PUT → POST agar konsisten dengan spoofing @method('PUT')
+// Laravel butuh route POST untuk menerima _method=PUT dari form HTML
+Route::put('/kontak/update/{id}', [KontakController::class, 'update']);
 
 Route::post('/kontak/delete/{id}', [KontakController::class, 'destroy']);
 
@@ -67,7 +70,9 @@ Route::get('/wilayah/edit/{id}', [WilayahController::class, 'edit']);
 Route::post('/wilayah/update/{id}', [WilayahController::class, 'update']);
 
 Route::post('/wilayah/delete/{id}', [WilayahController::class, 'destroy']);
+
 Route::get('/wilayah/{id}', [WilayahController::class, 'detail'])
+    ->middleware('auth')
     ->name('wilayah.detail');
 
 // CRUD Jabatan

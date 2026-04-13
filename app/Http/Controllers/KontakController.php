@@ -30,8 +30,9 @@ class KontakController extends Controller
             'wilayah_id' => 'required',
             'jabatan_id' => 'required',
             'nama' => 'required',
+            'nip' => 'required',
             'no_hp' => 'required',
-            'foto' => 'nullable|image|max:2048',
+            'foto' => 'nullable|image|max:10240',
         ]);
 
         $fotoPath = null;
@@ -43,6 +44,7 @@ class KontakController extends Controller
             'wilayah_id' => $request->wilayah_id,
             'jabatan_id' => $request->jabatan_id,
             'nama' => $request->nama,
+            'nip' => $request->nip,
             'no_hp' => $request->no_hp,
             'foto' => $fotoPath,
         ]);
@@ -66,26 +68,35 @@ class KontakController extends Controller
         $request->validate([
             'wilayah_id' => 'required',
             'jabatan_id' => 'required',
-            'nama' => 'required',
-            'no_hp' => 'required',
-            'foto' => 'nullable|image|max:2048',
+            'nama'       => 'required',
+            'nip' => 'required',
+            'no_hp'      => 'required',
+            'foto' => 'nullable|image|max:10240',
         ]);
 
-        $fotoPath = $kontak->foto;
-        if ($request->hasFile('foto')) {
-            if ($kontak->foto) {
-                Storage::disk('public')->delete($kontak->foto);
-            }
-            $fotoPath = $request->file('foto')->store('kontak', 'public');
-        }
-
-        $kontak->update([
+        // Bangun data manual, bukan dari $data hasil validate
+        // supaya foto lama tidak ikut ter-overwrite jadi null
+        $data = [
             'wilayah_id' => $request->wilayah_id,
             'jabatan_id' => $request->jabatan_id,
-            'nama' => $request->nama,
-            'no_hp' => $request->no_hp,
-            'foto' => $fotoPath,
-        ]);
+            'nama'       => $request->nama,
+            'nip' => $request->nip,
+            'no_hp'      => $request->no_hp,
+        ];
+
+        if ($request->hasFile('foto')) {
+            // Hapus foto lama jika ada
+            if ($kontak->foto && Storage::disk('public')->exists($kontak->foto)) {
+                Storage::disk('public')->delete($kontak->foto);
+            }
+
+            $filename    = time() . '_' . $request->file('foto')->getClientOriginalName();
+            $data['foto'] = $request->file('foto')->storeAs('kontak', $filename, 'public');
+        }
+        // Jika tidak ada file baru, $data['foto'] tidak di-set
+        // sehingga foto lama di database tetap terjaga
+
+        $kontak->update($data);
 
         return redirect('/kontak')->with('success', 'Data berhasil diupdate');
     }
